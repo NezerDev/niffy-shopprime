@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en-NG">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Niffy Shopprime | Manager Dashboard</title>
+<meta name="theme-color" content="#0E0C0A">
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%2275%22 font-size=%2280%22>✦</text></svg>">
+
+<!--
+  =========================================================
+  STAFF-ONLY DASHBOARD — Niffy Shopprime
+  Must be in the same folder as store.html on GitHub.
+  Sign in with the Firebase Auth email/password account set up
+  in the Firebase console. Use "Change Password" after login
+  to update it.
+  =========================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0E0C0A; --bg-2:#1C1612;
+    --gold:#D4AF7A; --wine:#6B1F2A;
+    --glass:rgba(28,20,16,0.7);
+    --glass-border:rgba(212,175,122,0.28);
+    --text:#F3ECE3; --text-muted:#B8AFA3;
+    --font-display:'Playfair Display',serif;
+    --font-body:'Inter',system-ui,sans-serif;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.55; min-height:100vh; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; text-decoration:none; }
+  button,input,select,textarea{ font-family:inherit; }
+  h1,h2,h3{ font-family:var(--font-display); font-weight:600; }
+  p{ color:var(--text-muted); }
+  :focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+
+  .mesh{ position:fixed; inset:0; z-index:-1; background:radial-gradient(ellipse at top,var(--bg-2),var(--bg) 60%); }
+  .glass{ background:var(--glass); border:1px solid var(--glass-border); border-radius:18px; }
+
+  /* ---- topbar ---- */
+  .topbar{ display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--glass-border); flex-wrap:wrap; gap:10px; position:sticky; top:0; z-index:50; background:rgba(14,12,10,0.92); }
+  .topbar .brand{ font-family:var(--font-display); font-size:17px; }
+  .topbar .brand span{ color:var(--gold); font-style:italic; }
+  .topbar-right{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+  /* ---- buttons ---- */
+  .btn{ font-weight:600; font-size:13.5px; padding:10px 18px; border-radius:100px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:transform .15s,box-shadow .15s; }
+  .btn:active{ transform:scale(0.96); }
+  .btn-gold{ background:linear-gradient(135deg,var(--gold),#ecd2a0); color:#221705; }
+  .btn-gold:hover{ box-shadow:0 6px 18px rgba(212,175,122,0.3); }
+  .btn-ghost{ background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); color:var(--text); }
+  .btn-ghost:hover{ background:rgba(255,255,255,0.08); }
+  .btn-wine{ background:rgba(107,31,42,0.5); border:1px solid rgba(107,31,42,0.8); color:#fff; }
+  .btn-sm{ padding:7px 14px; font-size:12.5px; }
+  .btn[disabled]{ opacity:0.45; cursor:not-allowed; }
+
+  /* ---- field inputs ---- */
+  .field-label{ font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; display:block; }
+  input[type="password"],input[type="text"],input[type="number"],select,textarea{
+    width:100%; padding:11px 14px; border-radius:10px;
+    background:rgba(255,255,255,0.06); border:1px solid var(--glass-border);
+    color:var(--text); font-size:14px; margin-bottom:12px;
+  }
+  textarea{ resize:vertical; min-height:66px; }
+  input::placeholder,textarea::placeholder{ color:var(--text-muted); }
+  .error-msg{ color:#e89aa0; font-size:13px; margin-top:-4px; margin-bottom:10px; display:none; }
+
+  /* ---- gate ---- */
+  .gate{ min-height:80vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .gate-card{ width:100%; max-width:360px; padding:38px 30px; text-align:center; }
+  .gate-card h1{ font-size:24px; margin-bottom:8px; }
+  .gate-card p{ font-size:14px; margin-bottom:22px; }
+  .gate-card .btn{ width:100%; justify-content:center; }
+
+  /* ---- dashboard ---- */
+  #dashboardView{ display:none; }
+  .wrap{ max-width:1000px; margin:0 auto; padding:36px 20px 80px; }
+  .section-head{ display:flex; align-items:center; justify-content:space-between; margin:36px 0 14px; flex-wrap:wrap; gap:10px; }
+  .section-title{ font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+
+  /* ---- stats ---- */
+  .overview-grid{ display:grid; gap:14px; grid-template-columns:repeat(2,1fr); }
+  @media(min-width:680px){ .overview-grid{grid-template-columns:repeat(3,1fr);} }
+  .stat-card{ padding:20px; text-align:center; }
+  .stat-num{ font-family:var(--font-display); font-size:24px; color:var(--gold); margin-bottom:4px; word-break:break-word; }
+  .stat-label{ font-size:11px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); }
+
+  /* ---- chart ---- */
+  .chart-card{ padding:22px 18px; }
+  .chart-bars{ display:flex; align-items:flex-end; gap:10px; height:130px; margin:10px 0 6px; }
+  .chart-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
+  .chart-bar{ width:100%; max-width:34px; background:linear-gradient(180deg,var(--gold),var(--wine)); border-radius:6px 6px 2px 2px; min-height:4px; transition:height .4s ease; }
+  .chart-val{ font-size:11px; color:var(--text-muted); margin-bottom:4px; }
+  .chart-day{ font-size:11px; color:var(--text-muted); margin-top:8px; }
+
+  /* ---- dash filter row ---- */
+  .dash-filter-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .dash-filter-row .filter-btn{ padding:7px 16px; border-radius:100px; border:1px solid var(--glass-border); font-size:13px; color:var(--text-muted); transition:all .2s; cursor:pointer; background:none; }
+  .dash-filter-row .filter-btn.active{ background:var(--gold); color:#221705; border-color:var(--gold); }
+
+  /* ---- product list ---- */
+  .list-card{ padding:6px 0; }
+  .list-row{ display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.06); font-size:14px; }
+  .list-row:last-child{ border-bottom:none; }
+  .list-row .meta{ font-size:12px; color:var(--text-muted); margin-top:3px; }
+  .empty-note{ padding:22px; font-size:14px; text-align:center; color:var(--text-muted); }
+
+  .prod-thumb{ width:44px; height:44px; border-radius:10px; overflow:hidden; flex-shrink:0; background:linear-gradient(150deg,rgba(212,175,122,0.18),rgba(107,31,42,0.25)); display:flex; align-items:center; justify-content:center; border:1px solid var(--glass-border); align-self:flex-start; }
+  .prod-thumb img{ width:100%; height:100%; object-fit:cover; }
+  .prod-thumb span{ font-family:var(--font-display); color:var(--gold); font-size:18px; }
+  .prod-info{ flex:1; min-width:0; }
+  .prod-info .name{ font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .prod-info .cat{ font-size:12px; color:var(--text-muted); }
+  .prod-price{ font-weight:600; color:var(--gold); white-space:nowrap; font-size:13px; flex-shrink:0; }
+  .prod-actions{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:flex-end; flex-basis:100%; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05); margin-top:4px; }
+
+  /* ---- stock toggle switch ---- */
+  .switch{ position:relative; width:40px; height:22px; flex-shrink:0; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .switch .slider{ position:absolute; inset:0; background:rgba(255,255,255,0.15); border-radius:100px; cursor:pointer; transition:background .2s; }
+  .switch .slider::before{ content:''; position:absolute; width:16px; height:16px; left:3px; top:3px; background:#fff; border-radius:50%; transition:transform .2s; }
+  .switch input:checked+.slider{ background:var(--gold); }
+  .switch input:checked+.slider::before{ transform:translateX(18px); }
+  .via-variants-label{ font-size:11px; color:var(--text-muted); white-space:nowrap; margin-right:auto; }
+
+  /* ---- order list ---- */
+  .order-row{ display:flex; align-items:flex-start; gap:14px; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .order-row:last-child{ border-bottom:none; }
+  .order-info{ flex:1; font-size:14px; }
+  .order-price{ font-weight:600; color:var(--gold); white-space:nowrap; font-size:13px; }
+
+  /* ---- modals ---- */
+  .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; display:none; align-items:flex-start; justify-content:center; padding:20px; overflow-y:auto; }
+  .modal-overlay.open{ display:flex; }
+  .modal-card{ width:100%; max-width:400px; padding:26px; margin:auto; }
+  .modal-card h3{ font-size:19px; margin-bottom:6px; }
+  .modal-card>p{ font-size:13px; margin-bottom:16px; }
+  .modal-card .btn{ width:100%; justify-content:center; margin-top:8px; }
+
+  /* ---- photo grid (product modal) ---- */
+  .photo-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:10px; }
+  .photo-thumb-wrap{ position:relative; border-radius:12px; overflow:hidden; border:1px solid var(--glass-border); aspect-ratio:1; }
+  .photo-thumb-wrap img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .photo-thumb-actions{ position:absolute; inset:0; background:rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center; gap:5px; opacity:0; transition:opacity .2s; }
+  .photo-thumb-wrap:hover .photo-thumb-actions{ opacity:1; }
+  /* On mobile, always show the actions (no hover) */
+  @media(hover:none){ .photo-thumb-actions{opacity:1;background:rgba(0,0,0,0.38);} }
+  .photo-action-btn{ width:28px; height:28px; border-radius:50%; background:rgba(255,255,255,0.15); border:none; color:#fff; cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center; }
+  .photo-action-btn:disabled{ opacity:0.3; cursor:not-allowed; }
+
+  /* ---- variant modal ---- */
+  .variant-row{ display:flex; align-items:flex-start; gap:10px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.08); }
+  .variant-row:last-child{ border-bottom:none; }
+  .variant-thumb{ width:52px; height:52px; border-radius:10px; overflow:hidden; flex-shrink:0; background:linear-gradient(150deg,rgba(212,175,122,0.18),rgba(107,31,42,0.25)); border:1px solid var(--glass-border); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
+  .variant-thumb img{ width:100%; height:36px; object-fit:cover; }
+  .variant-thumb-label{ font-size:9px; color:var(--text-muted); }
+  .variant-thumb-mono{ font-family:var(--font-display); color:var(--gold); font-size:18px; }
+  .variant-fields{ flex:1; min-width:0; }
+  .variant-fields input[type="text"]{ margin-bottom:8px; padding:8px 12px; font-size:13px; }
+  .variant-stock-row{ display:flex; align-items:center; gap:10px; font-size:13px; color:var(--text-muted); }
+  .variant-move-actions{ display:flex; flex-direction:column; gap:4px; flex-shrink:0; }
+
+  /* ---- checkbox row ---- */
+  .checkbox-row{ display:flex; align-items:center; gap:10px; margin-bottom:14px; font-size:14px; }
+  .checkbox-row input[type="checkbox"]{ width:18px; height:18px; margin:0; accent-color:var(--gold); }
+
+  /* ---- manage categories section ---- */
+  .cat-tree{ padding:6px 0; }
+  .cat-node{ border-bottom:1px solid rgba(255,255,255,0.06); }
+  .cat-node:last-child{ border-bottom:none; }
+  /* Grid: input takes 1fr, actions take only what they need — always right-aligned */
+  .cat-node-row{ display:grid; grid-template-columns:1fr auto; align-items:center; gap:8px; padding:10px 16px; }
+  .cat-node-row.level-2{ background:rgba(255,255,255,0.02); padding-left:28px; border-left:2px solid rgba(212,175,122,0.25); }
+  .cat-node-row.level-3{ background:rgba(255,255,255,0.03); padding-left:40px; border-left:2px solid rgba(212,175,122,0.12); }
+  .cat-node-input{ width:100%; background:transparent; border:none; border-bottom:1px solid var(--glass-border); color:var(--text); font-size:14px; padding:2px 4px; outline:none; min-width:0; }
+  .cat-node-input:focus{ border-color:var(--gold); }
+  .cat-node-actions{ display:flex; gap:5px; flex-shrink:0; align-items:center; }
+  .cat-node-btn{ padding:5px 9px; border-radius:100px; font-size:11px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.04); color:var(--text-muted); cursor:pointer; white-space:nowrap; }
+  .cat-node-btn:hover{ background:rgba(255,255,255,0.08); }
+  .cat-node-btn.danger:hover{ color:#e89aa0; border-color:#e89aa0; }
+  .cat-children{ }
+
+  /* ---- category checkbox tree in product modal ---- */
+  .cat-checkbox-tree{ max-height:220px; overflow-y:auto; border:1px solid var(--glass-border); border-radius:10px; margin-bottom:14px; padding:6px 0; }
+  .cat-cb-node{ }
+  .cat-cb-row{ display:flex; align-items:center; gap:8px; padding:8px 14px; cursor:pointer; transition:background .15s; }
+  .cat-cb-row:hover{ background:rgba(255,255,255,0.04); }
+  .cat-cb-row.level-2{ padding-left:28px; }
+  .cat-cb-row.level-3{ padding-left:42px; }
+  .cat-cb-row input[type="checkbox"]{ width:16px; height:16px; margin:0; accent-color:var(--gold); flex-shrink:0; }
+  .cat-cb-row label{ font-size:13.5px; cursor:pointer; flex:1; }
+</style>
+</head>
+<body>
+
+<div class="mesh"></div>
+
+<div class="topbar">
+  <div class="brand">Niffy Shopprime <span>· Dashboard</span></div>
+  <div class="topbar-right">
+    <a class="btn btn-ghost btn-sm" href="store.html">← Store</a>
+    <button class="btn btn-ghost btn-sm" id="changePassBtn" style="display:none">Change Password</button>
+    <button class="btn btn-wine btn-sm" id="logoutBtn" style="display:none">Logout</button>
+  </div>
+</div>
+
+<!-- ===== PASSWORD GATE ===== -->
+<div class="gate" id="gateView">
+  <div class="gate-card glass">
+    <h1>Staff Portal</h1>
+    <p>Sign in to access the manager dashboard.</p>
+    <input type="email" id="emailInput" placeholder="Email address" autocomplete="email">
+    <input type="password" id="passwordInput" placeholder="Password" autocomplete="current-password">
+    <button class="btn btn-gold" id="loginBtn">Sign In</button>
+    <p class="error-msg" id="loginError"></p>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="dashboardView">
+  <div class="wrap">
+
+    <div class="section-title" style="margin-top:8px">Overview</div>
+    <div class="overview-grid" style="margin-top:14px">
+      <div class="stat-card glass"><div class="stat-num" id="statOrders">—</div><div class="stat-label">Orders</div></div>
+      <div class="stat-card glass"><div class="stat-num" id="statRevenue">—</div><div class="stat-label">Revenue</div></div>
+      <div class="stat-card glass"><div class="stat-num" id="statPopular">—</div><div class="stat-label">Top Product</div></div>
+      <div class="stat-card glass"><div class="stat-num" id="statStock">—</div><div class="stat-label">In Stock</div></div>
+      <div class="stat-card glass"><div class="stat-num" id="statTotalVisits">—</div><div class="stat-label">Total Visits</div></div>
+      <div class="stat-card glass"><div class="stat-num" id="statTodayVisits">—</div><div class="stat-label">Visits Today</div></div>
+    </div>
+
+    <div class="section-title" style="margin-top:36px">Site Analytics — last 7 days</div>
+    <div class="chart-card glass" style="margin-top:14px">
+      <div class="chart-bars" id="chartBars"></div>
+    </div>
+
+    <div class="section-head">
+      <span class="section-title">Categories</span>
+      <button class="btn btn-gold btn-sm" id="addTopLevelCatBtn">+ Add Category</button>
+    </div>
+    <div class="list-card glass" id="catTreeContainer">
+      <p class="empty-note" id="catTreeEmpty" style="display:none">No categories yet — add one above.</p>
+      <div class="cat-tree" id="catTree"></div>
+    </div>
+
+    <div class="section-head">
+      <span class="section-title">Products</span>
+      <button class="btn btn-gold btn-sm" id="addProductBtn">+ Add Product</button>
+    </div>
+    <div class="dash-filter-row" id="dashFilterRow"></div>
+    <div class="list-card glass" id="productsList"></div>
+
+    <div class="section-head">
+      <span class="section-title">Order History</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" id="refreshBtn">Refresh</button>
+        <button class="btn btn-ghost btn-sm" id="clearHistoryBtn">Clear History</button>
+      </div>
+    </div>
+    <div class="list-card glass" id="ordersList"></div>
+
+  </div>
+</div>
+
+<!-- ===== ADD/EDIT PRODUCT MODAL ===== -->
+<div class="modal-overlay" id="productOverlay">
+  <div class="modal-card glass">
+    <h3 id="productModalTitle">Add Product</h3>
+    <p>Fill in the details — you can always edit later.</p>
+
+    <span class="field-label">Photos (up to 3 — tap ↑↓ to reorder)</span>
+    <div class="photo-grid" id="photoGrid"></div>
+    <button class="btn btn-ghost btn-sm" id="addPhotoBtn" style="margin-bottom:14px">+ Add Photo</button>
+    <!-- Hidden file input — triggered by addPhotoBtn -->
+    <input type="file" accept="image/*" id="prodPhotoInput" style="display:none" aria-hidden="true">
+
+    <span class="field-label">Product Name</span>
+    <input type="text" id="prodName" placeholder="e.g. Red Leather Handbag" autocomplete="off">
+
+    <span class="field-label">Description</span>
+    <textarea id="prodDescription" placeholder="A short description customers will see"></textarea>
+
+    <span class="field-label">Price (₦)</span>
+    <input type="number" id="prodPrice" placeholder="e.g. 15000" min="0">
+
+    <span class="field-label">Categories (tick all that apply)</span>
+    <div class="cat-checkbox-tree" id="prodCatTree">
+      <p style="padding:12px 14px;font-size:13px;color:var(--text-muted)">No categories yet — add them in the Categories section first.</p>
+    </div>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="prodInStock" checked>
+      <label for="prodInStock">In stock</label>
+    </div>
+
+    <p class="error-msg" id="productError"></p>
+    <button class="btn btn-gold" id="saveProductBtn">Save Product</button>
+    <button class="btn btn-ghost" id="cancelProductBtn">Cancel</button>
+  </div>
+</div>
+
+<!-- ===== MANAGE VARIANTS MODAL ===== -->
+<div class="modal-overlay" id="variantOverlay">
+  <div class="modal-card glass">
+    <h3 id="variantModalTitle">Manage Variants</h3>
+    <p id="variantModalSubtitle" style="margin-bottom:16px"></p>
+    <div id="variantList"></div>
+    <!-- Hidden file input — triggered by variant "Photo" buttons -->
+    <input type="file" accept="image/*" id="variantPhotoInput" style="display:none" aria-hidden="true">
+    <button class="btn btn-ghost btn-sm" id="addVariantBtn" style="width:100%;justify-content:center;margin:12px 0">+ Add Colour Variant</button>
+    <p class="error-msg" id="variantError"></p>
+    <button class="btn btn-gold" id="saveVariantsBtn">Save Variants</button>
+    <button class="btn btn-ghost" id="cancelVariantsBtn">Cancel</button>
+  </div>
+</div>
+
+<!-- ===== CHANGE PASSWORD MODAL ===== -->
+<div class="modal-overlay" id="changePassOverlay">
+  <div class="modal-card glass">
+    <h3>Change Password</h3>
+    <p>Verify your current password, then set a new one.</p>
+    <input type="password" id="currentPassInput" placeholder="Current password" autocomplete="current-password">
+    <input type="password" id="newPassInput" placeholder="New password" autocomplete="new-password">
+    <input type="password" id="confirmPassInput" placeholder="Confirm new password" autocomplete="new-password">
+    <p class="error-msg" id="changePassError"></p>
+    <button class="btn btn-gold" id="updatePassBtn">Update Password</button>
+    <button class="btn btn-ghost" id="cancelChangePassBtn">Cancel</button>
+  </div>
+</div>
+
+<!-- Firebase compat SDK v9 -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+  /* ================================================================
+     SECURITY NOTES (for future maintainers):
+     - Login is handled by Firebase Auth (see AUTH block below) —
+       no passwords are stored in Firestore
+     - All user-generated content sanitized before innerHTML insertion
+     - Sanitize() escapes angle brackets, ampersands, AND quotes —
+       safe for both text nodes and HTML attribute values
+     - Session auto-expires after 15 idle minutes
+     - Image compression capped at 200,000 chars base64 (~150KB binary)
+       to stay safely under Firestore's 1MB document limit
+  ================================================================ */
+
+  const el = id => document.getElementById(id);
+  const fmt = n => "₦" + Number(n || 0).toLocaleString("en-NG");
+
+  /* -- XSS sanitizer: safe for innerHTML AND HTML attribute values -- */
+  function sanitize(str){
+    const div = document.createElement("div");
+    div.textContent = String(str == null ? "" : str);
+    return div.innerHTML
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  /* -- localStorage helpers -- */
+  function localGet(k){ try{return localStorage.getItem(k);}catch(e){return null;} }
+  function localSet(k,v){ try{localStorage.setItem(k,v);}catch(e){} }
+
+  /* -- monogram helper -- */
+  function monogram(name){ return String(name||"?").trim().charAt(0).toUpperCase(); }
+
+  /* ================================================================
+     FIREBASE
+  ================================================================ */
+  const firebaseConfig = {
+    apiKey: "AIzaSyCZefMbOGPEUdaRd0BD0TCDQKUpZYgLVKs",
+    authDomain: "niffy-shopprime-aa747.firebaseapp.com",
+    projectId: "niffy-shopprime-aa747",
+    storageBucket: "niffy-shopprime-aa747.firebasestorage.app",
+    messagingSenderId: "875254315420",
+    appId: "1:875254315420:web:6c0a86df4a2b1d8d8a7059"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  /* ================================================================
+     FIREBASE AUTH
+     - Session persistence: SESSION only (clears on tab close)
+     - Rate limiting: handled server-side by Firebase (can't be
+       bypassed by clearing localStorage like our old system could)
+     - Password changes: reauthenticate first, then updatePassword
+     - Haptic feedback on wrong credentials kept for UX
+  ================================================================ */
+  const auth = firebase.auth();
+  // Session-only persistence: user must sign in again after closing the tab
+  auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+
+  const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+  let idleTimer = null;
+
+  function armIdleTimer(){
+    if(idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(async () => {
+      if(el("dashboardView").style.display !== "none"){
+        await auth.signOut();
+      }
+    }, IDLE_TIMEOUT_MS);
+  }
+  ["mousemove","keydown","click","touchstart","scroll"].forEach(evt =>
+    document.addEventListener(evt, () => { if(idleTimer) armIdleTimer(); }, {passive:true})
+  );
+
+  function showDashboardView(){
+    el("gateView").style.display = "none";
+    el("dashboardView").style.display = "block";
+    el("changePassBtn").style.display = "inline-flex";
+    el("logoutBtn").style.display = "inline-flex";
+    loadDashboard();
+    armIdleTimer();
+  }
+
+  function showGateView(){
+    el("dashboardView").style.display = "none";
+    el("changePassBtn").style.display = "none";
+    el("logoutBtn").style.display = "none";
+    el("passwordInput").value = "";
+    el("gateView").style.display = "flex";
+    if(idleTimer){ clearTimeout(idleTimer); idleTimer = null; }
+  }
+
+  // Auth state observer — handles login, logout, session restore, and idle signout
+  auth.onAuthStateChanged(user => {
+    if(user){
+      showDashboardView();
+    } else {
+      showGateView();
+    }
+  });
+
+  /* ================================================================
+     LOGIN
+     Error messages intentionally generic for email+password
+     ("Incorrect email or password") to avoid confirming whether
+     a given email exists in the system.
+  ================================================================ */
+  el("loginBtn").addEventListener("click", async () => {
+    const email = el("emailInput").value.trim();
+    const password = el("passwordInput").value;
+    const err = el("loginError");
+
+    if(!email || !password){
+      err.textContent = "Please enter your email and password.";
+      err.style.display = "block";
+      return;
+    }
+
+    el("loginBtn").disabled = true;
+    el("loginBtn").textContent = "Signing in…";
+    err.style.display = "none";
+
+    try{
+      await auth.signInWithEmailAndPassword(email, password);
+      // onAuthStateChanged handles the rest
+    } catch(e){
+      if("vibrate" in navigator) navigator.vibrate([80, 60, 80]);
+      if(["auth/wrong-password","auth/user-not-found","auth/invalid-credential","auth/invalid-email"].includes(e.code)){
+        err.textContent = "Incorrect email or password.";
+      } else if(e.code === "auth/too-many-requests"){
+        err.textContent = "Too many failed attempts — account temporarily locked. Try again later.";
+      } else {
+        err.textContent = "Sign-in failed — check your connection and try again.";
+      }
+      err.style.display = "block";
+    } finally {
+      el("loginBtn").disabled = false;
+      el("loginBtn").textContent = "Sign In";
+    }
+  });
+  el("emailInput").addEventListener("keydown", e => { if(e.key === "Enter") el("passwordInput").focus(); });
+  el("passwordInput").addEventListener("keydown", e => { if(e.key === "Enter") el("loginBtn").click(); });
+  el("logoutBtn").addEventListener("click", () => auth.signOut());
+
+  /* ================================================================
+     CHANGE PASSWORD
+     Uses Firebase reauthenticateWithCredential before updatePassword
+     — required by Firebase for sensitive operations.
+     Firebase enforces minimum 6-character passwords.
+  ================================================================ */
+  el("changePassBtn").addEventListener("click", () => el("changePassOverlay").classList.add("open"));
+  el("cancelChangePassBtn").addEventListener("click", closeChangePass);
+  function closeChangePass(){
+    el("changePassOverlay").classList.remove("open");
+    ["currentPassInput","newPassInput","confirmPassInput"].forEach(id => el(id).value = "");
+    el("changePassError").style.display = "none";
+  }
+  el("updatePassBtn").addEventListener("click", async () => {
+    const curPass = el("currentPassInput").value;
+    const newPass = el("newPassInput").value;
+    const confirmPass = el("confirmPassInput").value;
+    const err = el("changePassError");
+
+    if(!curPass){ err.textContent = "Enter your current password."; err.style.display = "block"; return; }
+    if(newPass.length < 6){ err.textContent = "New password must be at least 6 characters."; err.style.display = "block"; return; }
+    if(newPass !== confirmPass){ err.textContent = "New password and confirmation don't match."; err.style.display = "block"; return; }
+
+    try{
+      el("updatePassBtn").disabled = true;
+      el("updatePassBtn").textContent = "Updating…";
+      const user = auth.currentUser;
+      // Reauthenticate with current password before changing (Firebase requirement)
+      const credential = firebase.auth.EmailAuthProvider.credential(user.email, curPass);
+      await user.reauthenticateWithCredential(credential);
+      await user.updatePassword(newPass);
+      closeChangePass();
+    } catch(e){
+      if(e.code === "auth/wrong-password"){
+        err.textContent = "Current password is incorrect.";
+      } else if(e.code === "auth/requires-recent-login"){
+        err.textContent = "Session expired — please log out and back in, then try again.";
+      } else if(e.code === "auth/weak-password"){
+        err.textContent = "Password too weak — use at least 6 characters.";
+      } else {
+        err.textContent = "Update failed — check your connection.";
+      }
+      err.style.display = "block";
+    } finally {
+      el("updatePassBtn").disabled = false;
+      el("updatePassBtn").textContent = "Update Password";
+    }
+  });
+
+  /* ================================================================
+     IMAGE COMPRESSION
+     Max 600px on the longest side, JPEG 0.65 quality.
+     Hard cap: 200,000 chars base64 ≈ 150KB binary —
+     safely within Firestore's 1MB document limit even with
+     3 photos (3 × 150KB = 450KB) plus other fields.
+  ================================================================ */
+  const MAX_PHOTO_PX = 600;
+  const PHOTO_QUALITY = 0.65;
+  const MAX_B64_LENGTH = 200000;
+
+  async function compressImage(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, MAX_PHOTO_PX / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          const b64 = canvas.toDataURL("image/jpeg", PHOTO_QUALITY);
+          if(b64.length > MAX_B64_LENGTH){
+            reject(new Error("Photo is too large even after compression. Please use a smaller image (try a screenshot or resized version)."));
+          } else {
+            resolve(b64);
+          }
+        };
+        img.onerror = () => reject(new Error("Could not read the image file."));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error("Could not read the file."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* ================================================================
+     FIRESTORE HELPERS
+  ================================================================ */
+  async function fetchAllProducts(){
+    try{
+      const snap = await db.collection("products").get();
+      return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+    }catch(e){ console.error("Failed to fetch products:", e); return []; }
+  }
+
+  async function fetchAllOrders(){
+    try{
+      const snap = await db.collection("orders").orderBy("time","desc").get();
+      return snap.docs.map(d => ({ ...d.data(), id: d.id }));
+    }catch(e){ return []; }
+  }
+
+  /* ================================================================
+     CATEGORY TREE — loaded from settings/categories, all CRUD
+     persisted back to the same document.
+     Structure: { tree: [ { id, name, children: [...] } ] }
+  ================================================================ */
+  let dashCategoryTree = [];
+
+  function newCatId(){
+    return "c_" + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+  }
+
+  async function fetchCategoryTree(){
+    try{
+      const doc = await db.collection("settings").doc("categories").get();
+      return (doc.exists && Array.isArray(doc.data().tree)) ? doc.data().tree : [];
+    }catch(e){ return []; }
+  }
+
+  async function saveCategoryTree(){
+    await db.collection("settings").doc("categories").set({ tree: dashCategoryTree });
+  }
+
+  // Find a node and its parent by ID (returns {node, parent, index, siblings})
+  function findCatNode(tree, id, parent=null){
+    for(let i=0;i<tree.length;i++){
+      if(tree[i].id===id) return {node:tree[i],parent,index:i,siblings:tree};
+      const found = findCatNode(tree[i].children||[],id,tree[i]);
+      if(found) return found;
+    }
+    return null;
+  }
+
+  // Flatten tree to [{id, name, level}] for checkbox rendering
+  function flattenTree(nodes, level=1, result=[]){
+    nodes.forEach(n=>{
+      result.push({ id:n.id, name:n.name, level, hasChildren:(n.children||[]).length>0 });
+      flattenTree(n.children||[], level+1, result);
+    });
+    return result;
+  }
+
+  /* ---- Render the category tree in the dashboard ---- */
+  function renderCatTree(){
+    const container = el("catTree");
+    const emptyNote = el("catTreeEmpty");
+    if(!dashCategoryTree.length){
+      container.innerHTML = "";
+      emptyNote.style.display = "block";
+      return;
+    }
+    emptyNote.style.display = "none";
+    container.innerHTML = renderCatNodes(dashCategoryTree, 1);
+    wireCatTreeEvents(container);
+  }
+
+  function renderCatNodes(nodes, level){
+    return nodes.map(n => `
+      <div class="cat-node" data-id="${sanitize(n.id)}">
+        <div class="cat-node-row level-${level}">
+          <input class="cat-node-input" value="${sanitize(n.name)}" data-id="${sanitize(n.id)}" aria-label="Category name">
+          <div class="cat-node-actions">
+            ${level < 3 ? `<button class="cat-node-btn add-child-btn" data-id="${sanitize(n.id)}">+ Sub</button>` : ""}
+            <button class="cat-node-btn cat-up-btn" data-id="${sanitize(n.id)}">↑</button>
+            <button class="cat-node-btn cat-down-btn" data-id="${sanitize(n.id)}">↓</button>
+            <button class="cat-node-btn danger cat-del-btn" data-id="${sanitize(n.id)}">✕</button>
+          </div>
+        </div>
+        <div class="cat-children">
+          ${renderCatNodes(n.children||[], level+1)}
+        </div>
+      </div>`).join("");
+  }
+
+  function wireCatTreeEvents(container){
+    // Rename on input blur
+    container.querySelectorAll(".cat-node-input").forEach(inp => {
+      inp.addEventListener("blur", async () => {
+        const newName = inp.value.trim();
+        if(!newName) return inp.focus();
+        const found = findCatNode(dashCategoryTree, inp.dataset.id);
+        if(found && found.node.name !== newName){
+          found.node.name = newName;
+          await saveCategoryTree();
+        }
+      });
+      inp.addEventListener("keydown", e => { if(e.key==="Enter") inp.blur(); });
+    });
+
+    // Add subcategory
+    container.querySelectorAll(".add-child-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const found = findCatNode(dashCategoryTree, btn.dataset.id);
+        if(!found) return;
+        if(!Array.isArray(found.node.children)) found.node.children = [];
+        found.node.children.push({ id: newCatId(), name: "New subcategory", children: [] });
+        await saveCategoryTree();
+        renderCatTree();
+        // Focus the new input
+        const newInputs = el("catTree").querySelectorAll(".cat-node-input");
+        if(newInputs.length) newInputs[newInputs.length-1].focus();
+      });
+    });
+
+    // Move up
+    container.querySelectorAll(".cat-up-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const found = findCatNode(dashCategoryTree, btn.dataset.id);
+        if(!found || found.index === 0) return;
+        const s = found.siblings;
+        [s[found.index-1],s[found.index]] = [s[found.index],s[found.index-1]];
+        await saveCategoryTree();
+        renderCatTree();
+      });
+    });
+
+    // Move down
+    container.querySelectorAll(".cat-down-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const found = findCatNode(dashCategoryTree, btn.dataset.id);
+        if(!found || found.index >= found.siblings.length-1) return;
+        const s = found.siblings;
+        [s[found.index+1],s[found.index]] = [s[found.index],s[found.index+1]];
+        await saveCategoryTree();
+        renderCatTree();
+      });
+    });
+
+    // Delete
+    container.querySelectorAll(".cat-del-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const found = findCatNode(dashCategoryTree, btn.dataset.id);
+        if(!found) return;
+        const name = found.node.name;
+        const hasChildren = (found.node.children||[]).length > 0;
+        const msg = hasChildren
+          ? `Delete "${name}" and all its subcategories? Products won't be deleted but will no longer be linked to these categories.`
+          : `Delete "${name}"? Products linked to it won't be deleted.`;
+        if(!confirm(msg)) return;
+        found.siblings.splice(found.index, 1);
+        await saveCategoryTree();
+        renderCatTree();
+      });
+    });
+  }
+
+  // "Add Category" top-level button
+  el("addTopLevelCatBtn").addEventListener("click", async () => {
+    dashCategoryTree.push({ id: newCatId(), name: "New category", children: [] });
+    await saveCategoryTree();
+    renderCatTree();
+    const inputs = el("catTree").querySelectorAll(".cat-node-input");
+    if(inputs.length) inputs[inputs.length-1].focus();
+  });
+
+  /* ---- Checkbox tree in product modal ---- */
+  let selectedCategoryIds = []; // categoryIds currently checked
+
+  function renderProdCatTree(selectedIds){
+    selectedCategoryIds = [...(selectedIds||[])];
+    const container = el("prodCatTree");
+    const flat = flattenTree(dashCategoryTree);
+    if(!flat.length){
+      container.innerHTML = '<p style="padding:12px 14px;font-size:13px;color:var(--text-muted)">No categories yet — add them in the Categories section first.</p>';
+      return;
+    }
+    container.innerHTML = flat.map(node => `
+      <div class="cat-cb-node">
+        <div class="cat-cb-row level-${node.level}">
+          <input type="checkbox" id="cb_${sanitize(node.id)}" value="${sanitize(node.id)}"
+            ${selectedCategoryIds.includes(node.id) ? "checked" : ""}
+            aria-label="${sanitize(node.name)}">
+          <label for="cb_${sanitize(node.id)}">${sanitize(node.name)}</label>
+        </div>
+      </div>`).join("");
+    container.querySelectorAll("input[type=checkbox]").forEach(chk => {
+      chk.addEventListener("change", () => {
+        if(chk.checked){
+          if(!selectedCategoryIds.includes(chk.value)) selectedCategoryIds.push(chk.value);
+        } else {
+          selectedCategoryIds = selectedCategoryIds.filter(id => id !== chk.value);
+        }
+      });
+    });
+  }
+
+  /* ================================================================
+     DASHBOARD MAIN LOAD
+  ================================================================ */
+  let dashAllProducts = [];
+  let dashCategoryFilter = "all";
+
+  async function loadDashboard(){
+    const today = new Date().toISOString().slice(0,10);
+    const days = [];
+    for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); days.push(d); }
+    const dayStrings = days.map(d => d.toISOString().slice(0,10));
+
+    const [products, orders, catTree, totalVisitDoc, ...dayDocs] = await Promise.all([
+      fetchAllProducts(),
+      fetchAllOrders(),
+      fetchCategoryTree(),
+      db.collection("visits").doc("total").get().catch(()=>null),
+      ...dayStrings.map(s => db.collection("visits").doc(s).get().catch(()=>null))
+    ]);
+
+    dashAllProducts = products;
+    dashCategoryTree = catTree;
+    renderCatTree();
+
+    // Overview stats
+    let revenue = 0;
+    const itemTally = {};
+    orders.forEach(o => {
+      revenue += o.total || 0;
+      (o.items||[]).forEach(it => { itemTally[it.name]=(itemTally[it.name]||0)+it.qty; });
+    });
+    let mostPopular = "—", maxQty = 0;
+    Object.entries(itemTally).forEach(([name,qty]) => { if(qty>maxQty){ maxQty=qty; mostPopular=name; } });
+
+    const totalVisits = totalVisitDoc && totalVisitDoc.exists ? (totalVisitDoc.data().count||0) : 0;
+    const todayVisits = dayDocs[6] && dayDocs[6].exists ? (dayDocs[6].data().count||0) : 0;
+    const counts = dayDocs.map(doc => (doc && doc.exists) ? (doc.data().count||0) : 0);
+
+    // Determine in-stock count accounting for variants
+    const inStockCount = products.filter(p => {
+      if(p.hasVariants && Array.isArray(p.variants) && p.variants.length)
+        return p.variants.some(v=>v.inStock);
+      return p.inStock !== false;
+    }).length;
+
+    el("statOrders").textContent = orders.length;
+    el("statRevenue").textContent = fmt(revenue);
+    el("statPopular").textContent = mostPopular;
+    el("statStock").textContent = inStockCount;
+    el("statTotalVisits").textContent = totalVisits;
+    el("statTodayVisits").textContent = todayVisits;
+
+    // Chart
+    const maxCount = Math.max(1, ...counts);
+    el("chartBars").innerHTML = days.map((d,i) => `
+      <div class="chart-col">
+        <div class="chart-val">${counts[i]}</div>
+        <div class="chart-bar" style="height:${(counts[i]/maxCount)*100}%"></div>
+        <div class="chart-day">${d.toLocaleDateString("en-NG",{weekday:"short"})}</div>
+      </div>`).join("");
+
+    // Products
+    renderDashFilters(products);
+    renderProductsList(products);
+
+    // Orders
+    renderOrdersList(orders);
+  }
+
+  /* ================================================================
+     DASHBOARD CATEGORY FILTER
+  ================================================================ */
+  function renderDashFilters(products){
+    const categories = [...new Set(products.map(p=>p.category).filter(Boolean))].sort();
+    const row = el("dashFilterRow");
+    if(!categories.length){ row.innerHTML=""; return; }
+    row.innerHTML = ["all",...categories].map(c => `
+      <button class="filter-btn ${c===dashCategoryFilter?"active":""}" data-filter="${sanitize(c)}">
+        ${c==="all"?"All":sanitize(c)}
+      </button>`).join("");
+    row.querySelectorAll(".filter-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        row.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        dashCategoryFilter = btn.dataset.filter;
+        applyDashFilter();
+      });
+    });
+  }
+
+  function applyDashFilter(){
+    document.querySelectorAll(".dash-prod-row").forEach(row => {
+      row.style.display = (dashCategoryFilter==="all" || row.dataset.category===dashCategoryFilter) ? "" : "none";
+    });
+  }
+
+  /* ================================================================
+     PRODUCT LIST RENDER
+  ================================================================ */
+  function getFirstPhoto(p){
+    if(p.hasVariants && Array.isArray(p.variants) && p.variants.length){
+      const v = p.variants.find(v=>v.photo) || p.variants[0];
+      return v ? (v.photo||"") : "";
+    }
+    if(Array.isArray(p.photos) && p.photos.length) return p.photos[0];
+    return p.photo || "";
+  }
+
+  function isProductInStock(p){
+    if(p.hasVariants && Array.isArray(p.variants) && p.variants.length)
+      return p.variants.some(v=>v.inStock);
+    return p.inStock !== false;
+  }
+
+  function renderProductsList(products){
+    const list = el("productsList");
+    if(!products.length){
+      list.innerHTML = '<p class="empty-note">No products yet — tap "+ Add Product" to create the first one.</p>';
+      return;
+    }
+    list.innerHTML = products.map(p => {
+      const photo = getFirstPhoto(p);
+      const hasVariants = p.hasVariants && Array.isArray(p.variants) && p.variants.length > 0;
+      const inStock = isProductInStock(p);
+      const variantCount = hasVariants ? p.variants.length : 0;
+      return `
+        <div class="list-row dash-prod-row" data-id="${sanitize(p.id)}" data-category="${sanitize(p.category||"")}">
+          <div class="prod-thumb">
+            ${photo ? `<img src="${sanitize(photo)}" alt="${sanitize(p.name)}">` : `<span>${sanitize(monogram(p.name))}</span>`}
+          </div>
+          <div class="prod-info">
+            <div class="name">${sanitize(p.name)}</div>
+            <div class="cat">${sanitize(p.category||"")}${hasVariants?" · "+variantCount+" colour"+(variantCount>1?"s":""):""}</div>
+          </div>
+          <div class="prod-price">${fmt(p.price)}</div>
+          <div class="prod-actions">
+            ${hasVariants
+              ? `<span class="via-variants-label">Stock via variants</span>`
+              : `<label class="switch" title="${inStock?"In stock — click to mark out of stock":"Out of stock — click to mark in stock"}">
+                   <input type="checkbox" class="stock-toggle" ${inStock?"checked":""}>
+                   <span class="slider"></span>
+                 </label>`}
+            <button class="btn btn-ghost btn-sm variants-btn">
+              ${hasVariants ? `Variants (${variantCount})` : "Add Variants"}
+            </button>
+            <button class="btn btn-ghost btn-sm edit-btn">Edit</button>
+            <button class="btn btn-ghost btn-sm delete-btn">Delete</button>
+          </div>
+        </div>`;
+    }).join("");
+
+    // Wire up event listeners
+    list.querySelectorAll(".dash-prod-row").forEach(row => {
+      const pid = row.dataset.id;
+      const product = products.find(p => p.id === pid);
+      if(!product) return;
+
+      const stockToggle = row.querySelector(".stock-toggle");
+      if(stockToggle){
+        stockToggle.addEventListener("change", () => toggleStock(product));
+      }
+      row.querySelector(".variants-btn").addEventListener("click", () => openVariantModal(pid));
+      row.querySelector(".edit-btn").addEventListener("click", () => openProductModal(product));
+      row.querySelector(".delete-btn").addEventListener("click", () => deleteProduct(product));
+    });
+
+    applyDashFilter();
+  }
+
+  /* ================================================================
+     ORDER LIST RENDER
+  ================================================================ */
+  function renderOrdersList(orders){
+    const list = el("ordersList");
+    if(!orders.length){
+      list.innerHTML = '<p class="empty-note">No orders yet — they\'ll appear as soon as a customer checks out.</p>';
+      return;
+    }
+    list.innerHTML = orders.map(o => {
+      // Sanitize all order data before rendering
+      const summary = (o.items||[]).map(it =>
+        `${sanitize(String(it.qty||1))}× ${sanitize(String(it.name||""))}`
+      ).join(", ");
+      const time = new Date(o.time).toLocaleString("en-NG",{dateStyle:"medium",timeStyle:"short"});
+      return `
+        <div class="order-row">
+          <div class="order-info">
+            ${summary}
+            <div class="meta">${time}</div>
+          </div>
+          <div class="order-price">${fmt(o.total)}</div>
+        </div>`;
+    }).join("");
+  }
+
+  /* ================================================================
+     STOCK TOGGLE (non-variant products only)
+  ================================================================ */
+  async function toggleStock(product){
+    try{
+      await db.collection("products").doc(product.id).update({ inStock: !product.inStock });
+      loadDashboard();
+    }catch(e){ alert("Couldn't update stock — check your connection."); }
+  }
+
+  /* ================================================================
+     DELETE PRODUCT
+  ================================================================ */
+  async function deleteProduct(product){
+    if(!confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
+    try{
+      await db.collection("products").doc(product.id).delete();
+      loadDashboard();
+    }catch(e){ alert("Couldn't delete — check your connection."); }
+  }
+
+  /* ================================================================
+     ADD / EDIT PRODUCT MODAL
+  ================================================================ */
+  let currentEditId = null;
+  let editPhotos = []; // array of base64 strings (max 3)
+
+  function showProductError(msg){ el("productError").textContent=msg; el("productError").style.display="block"; }
+  function hideProductError(){ el("productError").style.display="none"; }
+
+  async function openProductModal(product){
+    currentEditId = product ? product.id : null;
+    hideProductError();
+    el("productModalTitle").textContent = product ? "Edit Product" : "Add Product";
+    el("prodName").value = product ? (product.name||"") : "";
+    el("prodDescription").value = product ? (product.description||"") : "";
+    el("prodPrice").value = product ? (product.price||"") : "";
+    el("prodInStock").checked = product ? (product.inStock!==false) : true;
+
+    // Migrate old single-photo format to photos array
+    if(product){
+      if(Array.isArray(product.photos) && product.photos.length){
+        editPhotos = [...product.photos];
+      } else if(product.photo){
+        editPhotos = [product.photo];
+      } else {
+        editPhotos = [];
+      }
+    } else {
+      editPhotos = [];
+    }
+    renderPhotoGrid();
+
+    // Category checkbox tree
+    // For backward compat: if product has old flat `category` string but no categoryIds,
+    // try to match it to a tree node by name and pre-tick it
+    let preSelectedIds = [];
+    if(product){
+      if(Array.isArray(product.categoryIds) && product.categoryIds.length){
+        preSelectedIds = product.categoryIds;
+      } else if(product.category){
+        // Backward compat: find the matching node ID by name
+        const flat = flattenTree(dashCategoryTree);
+        const match = flat.find(n => n.name.toLowerCase().trim() === (product.category||"").toLowerCase().trim());
+        if(match) preSelectedIds = [match.id];
+      }
+    }
+    renderProdCatTree(preSelectedIds);
+
+    el("productOverlay").classList.add("open");
+  }
+
+  function closeProductModal(){
+    el("productOverlay").classList.remove("open");
+    editPhotos = [];
+    currentEditId = null;
+    selectedCategoryIds = [];
+    hideProductError();
+  }
+  el("cancelProductBtn").addEventListener("click", closeProductModal);
+  el("addProductBtn").addEventListener("click", () => openProductModal(null));
+
+  function renderPhotoGrid(){
+    const grid = el("photoGrid");
+    if(!editPhotos.length){
+      grid.innerHTML = "";
+    } else {
+      grid.innerHTML = editPhotos.map((photo, i) => `
+        <div class="photo-thumb-wrap">
+          <img src="${sanitize(photo)}" alt="Photo ${i+1}">
+          <div class="photo-thumb-actions">
+            <button class="photo-action-btn photo-up" data-i="${i}" ${i===0?"disabled":""} title="Move left">↑</button>
+            <button class="photo-action-btn photo-down" data-i="${i}" ${i===editPhotos.length-1?"disabled":""} title="Move right">↓</button>
+            <button class="photo-action-btn photo-remove" data-i="${i}" title="Remove">✕</button>
+          </div>
+        </div>`).join("");
+
+      grid.querySelectorAll(".photo-up").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const i = parseInt(btn.dataset.i, 10);
+          if(i > 0){[editPhotos[i-1],editPhotos[i]]=[editPhotos[i],editPhotos[i-1]]; renderPhotoGrid();}
+        });
+      });
+      grid.querySelectorAll(".photo-down").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const i = parseInt(btn.dataset.i, 10);
+          if(i < editPhotos.length-1){[editPhotos[i+1],editPhotos[i]]=[editPhotos[i],editPhotos[i+1]]; renderPhotoGrid();}
+        });
+      });
+      grid.querySelectorAll(".photo-remove").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const i = parseInt(btn.dataset.i, 10);
+          editPhotos.splice(i, 1);
+          renderPhotoGrid();
+          updateAddPhotoBtn();
+        });
+      });
+    }
+    updateAddPhotoBtn();
+  }
+
+  function updateAddPhotoBtn(){
+    const btn = el("addPhotoBtn");
+    const full = editPhotos.length >= 3;
+    btn.disabled = full;
+    btn.textContent = full ? "Maximum 3 photos reached" : "+ Add Photo";
+  }
+
+  el("addPhotoBtn").addEventListener("click", () => el("prodPhotoInput").click());
+  el("prodPhotoInput").addEventListener("change", async e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    try{
+      const b64 = await compressImage(file);
+      if(editPhotos.length < 3){ editPhotos.push(b64); renderPhotoGrid(); }
+    }catch(err){
+      showProductError(err.message || "Couldn't read that photo — try a different one.");
+    } finally {
+      e.target.value = "";
+    }
+  });
+
+  el("saveProductBtn").addEventListener("click", async () => {
+    const name = el("prodName").value.trim();
+    const description = el("prodDescription").value.trim();
+    const price = parseFloat(el("prodPrice").value);
+    const inStock = el("prodInStock").checked;
+
+    if(!name){ showProductError("Give the product a name."); return; }
+    if(isNaN(price) || price < 0){ showProductError("Enter a valid price."); return; }
+
+    const id = currentEditId || ("p_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+
+    // Preserve existing variants when editing
+    let existingVariants = [];
+    let existingHasVariants = false;
+    if(currentEditId){
+      const existing = dashAllProducts.find(p=>p.id===currentEditId);
+      if(existing){
+        existingVariants = existing.variants || [];
+        existingHasVariants = !!existing.hasVariants;
+      }
+    }
+
+    // Derive a human-readable primary category label from the first selected node
+    // (kept for backward compat display in the dashboard product list)
+    const flat = flattenTree(dashCategoryTree);
+    const primaryNode = flat.find(n => selectedCategoryIds.includes(n.id));
+    const categoryLabel = primaryNode ? primaryNode.name : "";
+
+    const record = {
+      id, name, description, price,
+      category: categoryLabel,       // backward compat label
+      categoryIds: selectedCategoryIds, // new multi-category array
+      inStock,
+      photos: editPhotos,
+      hasVariants: existingHasVariants,
+      variants: existingVariants
+    };
+
+    try{
+      el("saveProductBtn").disabled = true;
+      el("saveProductBtn").textContent = "Saving…";
+      await db.collection("products").doc(id).set(record);
+      closeProductModal();
+      loadDashboard();
+    }catch(e){
+      showProductError("Save failed — check your connection and try again.");
+    }finally{
+      el("saveProductBtn").disabled = false;
+      el("saveProductBtn").textContent = "Save Product";
+    }
+  });
+
+  /* ================================================================
+     MANAGE VARIANTS MODAL
+     - Up to 3 colour variants per product
+     - Each variant: colour name (text), photo (base64), inStock toggle
+     - Reorder with ↑↓ buttons
+     - Duplicate colour names rejected
+     - When variants exist, product.hasVariants = true
+       and product.inStock = variants.some(v=>v.inStock)
+  ================================================================ */
+  let variantModalPid = null;
+  let editVariants = []; // [{colour, photo, inStock}]
+  let pendingVariantPhotoIndex = null;
+
+  function showVariantError(msg){ el("variantError").textContent=msg; el("variantError").style.display="block"; }
+  function hideVariantError(){ el("variantError").style.display="none"; }
+
+  async function openVariantModal(pid){
+    const product = dashAllProducts.find(p=>p.id===pid);
+    if(!product) return;
+    variantModalPid = pid;
+    // Deep copy so we don't mutate the original until save
+    editVariants = (product.variants||[]).map(v=>({...v}));
+    el("variantModalTitle").textContent = `Colour Variants`;
+    el("variantModalSubtitle").textContent = `Product: ${product.name}`;
+    hideVariantError();
+    renderVariantList();
+    el("variantOverlay").classList.add("open");
+  }
+
+  function renderVariantList(){
+    const list = el("variantList");
+    if(!editVariants.length){
+      list.innerHTML = '<p class="empty-note" style="padding:12px 0;font-size:13px">No variants yet — add a colour below.</p>';
+    } else {
+      list.innerHTML = editVariants.map((v,i) => `
+        <div class="variant-row" data-vi="${i}">
+          <div class="variant-thumb">
+            ${v.photo
+              ? `<img src="${sanitize(v.photo)}" alt="${sanitize(v.colour)}">`
+              : `<span class="variant-thumb-mono">${sanitize(v.colour?v.colour.trim().charAt(0).toUpperCase():"?")}</span>`}
+            <span class="variant-thumb-label">tap to change</span>
+          </div>
+          <div class="variant-fields">
+            <input type="text" class="variant-colour" data-vi="${i}"
+              value="${sanitize(v.colour)}" placeholder="Colour name">
+            <div class="variant-stock-row">
+              <span>In stock</span>
+              <label class="switch">
+                <input type="checkbox" class="variant-stock" data-vi="${i}" ${v.inStock?"checked":""}>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="variant-move-actions">
+            <button class="btn btn-ghost btn-sm v-photo" data-vi="${i}" title="Upload photo">📷</button>
+            <button class="btn btn-ghost btn-sm v-up" data-vi="${i}" ${i===0?"disabled":""} title="Move up">↑</button>
+            <button class="btn btn-ghost btn-sm v-down" data-vi="${i}" ${i===editVariants.length-1?"disabled":""} title="Move down">↓</button>
+            <button class="btn btn-ghost btn-sm v-del" data-vi="${i}" title="Delete">✕</button>
+          </div>
+        </div>`).join("");
+
+      // Wire events
+      list.querySelectorAll(".variant-colour").forEach(inp => {
+        inp.addEventListener("input", () => {
+          editVariants[parseInt(inp.dataset.vi,10)].colour = inp.value;
+        });
+      });
+      list.querySelectorAll(".variant-stock").forEach(chk => {
+        chk.addEventListener("change", () => {
+          editVariants[parseInt(chk.dataset.vi,10)].inStock = chk.checked;
+        });
+      });
+      list.querySelectorAll(".v-photo").forEach(btn => {
+        btn.addEventListener("click", () => {
+          pendingVariantPhotoIndex = parseInt(btn.dataset.vi,10);
+          el("variantPhotoInput").click();
+        });
+      });
+      list.querySelectorAll(".v-up").forEach(btn => {
+        btn.addEventListener("click", () => {
+          // Read latest colour values from inputs before reordering
+          syncVariantColours();
+          const i = parseInt(btn.dataset.vi,10);
+          if(i>0){[editVariants[i-1],editVariants[i]]=[editVariants[i],editVariants[i-1]]; renderVariantList();}
+        });
+      });
+      list.querySelectorAll(".v-down").forEach(btn => {
+        btn.addEventListener("click", () => {
+          syncVariantColours();
+          const i = parseInt(btn.dataset.vi,10);
+          if(i<editVariants.length-1){[editVariants[i+1],editVariants[i]]=[editVariants[i],editVariants[i+1]]; renderVariantList();}
+        });
+      });
+      list.querySelectorAll(".v-del").forEach(btn => {
+        btn.addEventListener("click", () => {
+          syncVariantColours();
+          const i = parseInt(btn.dataset.vi,10);
+          editVariants.splice(i,1);
+          renderVariantList();
+          updateAddVariantBtn();
+        });
+      });
+      // Make the thumb tappable too (photo upload)
+      list.querySelectorAll(".variant-thumb").forEach((thumb, i) => {
+        thumb.style.cursor = "pointer";
+        thumb.addEventListener("click", () => {
+          pendingVariantPhotoIndex = i;
+          el("variantPhotoInput").click();
+        });
+      });
+    }
+    updateAddVariantBtn();
+  }
+
+  // Syncs colour input values back to editVariants before reorder/delete
+  function syncVariantColours(){
+    document.querySelectorAll(".variant-colour").forEach(inp => {
+      const i = parseInt(inp.dataset.vi, 10);
+      if(!isNaN(i) && editVariants[i]) editVariants[i].colour = inp.value;
+    });
+  }
+
+  function updateAddVariantBtn(){
+    const btn = el("addVariantBtn");
+    const full = editVariants.length >= 3;
+    btn.disabled = full;
+    btn.textContent = full ? "Maximum 3 variants" : "+ Add Colour Variant";
+  }
+
+  el("addVariantBtn").addEventListener("click", () => {
+    if(editVariants.length >= 3) return;
+    syncVariantColours();
+    editVariants.push({ colour:"", photo:"", inStock:true });
+    renderVariantList();
+  });
+
+  el("variantPhotoInput").addEventListener("change", async e => {
+    const file = e.target.files[0];
+    if(!file || pendingVariantPhotoIndex === null) return;
+    try{
+      const b64 = await compressImage(file);
+      editVariants[pendingVariantPhotoIndex].photo = b64;
+      renderVariantList();
+    }catch(err){
+      showVariantError(err.message || "Photo error — try a different image.");
+    }finally{
+      pendingVariantPhotoIndex = null;
+      e.target.value = "";
+    }
+  });
+
+  el("saveVariantsBtn").addEventListener("click", async () => {
+    syncVariantColours();
+    // Validate: all variants need a colour name
+    if(editVariants.some(v=>!v.colour.trim())){
+      showVariantError("Every variant needs a colour name.");
+      return;
+    }
+    // Validate: no duplicate colour names (case-insensitive)
+    const colours = editVariants.map(v=>v.colour.trim().toLowerCase());
+    if(new Set(colours).size !== colours.length){
+      showVariantError("Each colour must be unique.");
+      return;
+    }
+    try{
+      el("saveVariantsBtn").disabled = true;
+      el("saveVariantsBtn").textContent = "Saving…";
+      const cleanVariants = editVariants.map(v=>({
+        colour: v.colour.trim(),
+        photo: v.photo || "",
+        inStock: !!v.inStock
+      }));
+      const hasVariants = cleanVariants.length > 0;
+      await db.collection("products").doc(variantModalPid).update({
+        hasVariants,
+        variants: cleanVariants,
+        // Keep overall inStock in sync with variants
+        inStock: hasVariants ? cleanVariants.some(v=>v.inStock) : undefined
+      });
+      closeVariantModal();
+      loadDashboard();
+    }catch(e){
+      showVariantError("Save failed — check your connection.");
+    }finally{
+      el("saveVariantsBtn").disabled = false;
+      el("saveVariantsBtn").textContent = "Save Variants";
+    }
+  });
+
+  function closeVariantModal(){
+    el("variantOverlay").classList.remove("open");
+    variantModalPid = null;
+    editVariants = [];
+    pendingVariantPhotoIndex = null;
+    hideVariantError();
+  }
+  el("cancelVariantsBtn").addEventListener("click", closeVariantModal);
+
+  /* ================================================================
+     ORDER HISTORY ACTIONS
+  ================================================================ */
+  el("refreshBtn").addEventListener("click", loadDashboard);
+  el("clearHistoryBtn").addEventListener("click", async () => {
+    if(!confirm("Clear all order history? This cannot be undone.")) return;
+    try{
+      const snap = await db.collection("orders").get();
+      const batch = db.batch();
+      snap.docs.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+      loadDashboard();
+    }catch(e){ alert("Couldn't clear history — check your connection."); }
+  });
+
+  /* ================================================================
+     CLOSE MODALS ON OVERLAY CLICK OR ESCAPE
+  ================================================================ */
+  ["productOverlay","variantOverlay","changePassOverlay"].forEach(id => {
+    el(id).addEventListener("click", e => {
+      if(e.target === el(id)){
+        if(id==="productOverlay") closeProductModal();
+        if(id==="variantOverlay") closeVariantModal();
+        if(id==="changePassOverlay") closeChangePass();
+      }
+    });
+  });
+  document.addEventListener("keydown", e => {
+    if(e.key==="Escape"){
+      closeProductModal();
+      closeVariantModal();
+      closeChangePass();
+    }
+  });
+</script>
+
+</body>
+</html>
